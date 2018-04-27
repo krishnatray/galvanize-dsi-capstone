@@ -5,20 +5,6 @@ Created on Tue Apr 24 12:58:33 2018
 @author: SS
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 24 12:58:33 2018
-
-@author: SS
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 24 08:55:16 2018
-
-@author: SS
-"""
-
 #importing the libraries
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,7 +14,7 @@ import pandas as pd
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 import re
-matplotlib inline
+# matplotlib inline
 
 
 def clean_data(text_field):
@@ -59,11 +45,13 @@ X_test_cv = cv.transform(X_test).toarray()
 
 
 # Feature Scaling
-from sklearn.preprocessing import StandardScaler
-sc = StandardScaler()
-X_train_scaled = sc.fit_transform(X_train_cv)
-X_test_scaled = sc.transform(X_test_cv)
-
+# =============================================================================
+# from sklearn.preprocessing import StandardScaler
+# sc = StandardScaler()
+# X_train_scaled = sc.fit_transform(X_train_cv)
+# X_test_scaled = sc.transform(X_test_cv)
+#
+# =============================================================================
 # Fitting Naive Bayes import GaussianNB
 from sklearn.naive_bayes import MultinomialNB
 model = MultinomialNB()
