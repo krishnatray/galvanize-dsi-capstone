@@ -10,8 +10,9 @@ from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
+#from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -68,17 +69,7 @@ def get_train_test(filepath):
         X_train, X_test, y_train, y_test = train_test_split(data.corpus, y,test_size=0.25, random_state=0)
 
 
-    # Bag of words model
-    print ("TFIDF vectorizer..." )
-
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    cv = TfidfVectorizer(max_features = 100, stop_words= "english")
-    print(cv)
-
-    X_train_cv = cv.fit_transform(X_train).toarray()
-    X_test_cv = cv.transform(X_test).toarray()
-
-    return X_train_cv, X_test_cv, y_train, y_test
+    return X_train, X_test, y_train, y_test
 
 
 # =============================================================================
@@ -251,8 +242,17 @@ def profit_curve_main(filepath, cost_benefit):
                                           -----------
     """
     print("Calling get_train_test()...")
-    X_train, X_test, y_train, y_test = get_train_test(filepath)
-    print("Returned from get_train_test()", X_train.shape, X_test.shape, y_test.shape, y_train.shape)
+    X_train_raw, X_test_raw, y_train, y_test = get_train_test(filepath)
+    print("Returned from get_train_test()", X_train_raw.shape, X_test_raw.shape, y_test.shape, y_train.shape)
+
+    # Bag of words model
+    print ("TFIDF vectorizer..." )
+    cv = TfidfVectorizer(max_features = 100, stop_words= "english")
+    print(cv)
+
+    X_train = cv.fit_transform(X_train_raw).toarray()
+    X_test = cv.transform(X_test_raw).toarray()
+
 
     #models = [RF(), LR(), GBC(), SVC(probability=True)]
     models = [MultinomialNB(), GaussianNB(), LR(), RF(), GBC(), KNN()]
@@ -305,16 +305,31 @@ def profit_curve_main(filepath, cost_benefit):
     roc_auc = auc(fpr,tpr)
     print("Area under the curve : ", roc_auc)
 
+
+    # Feature Importances
+    print("********* RF Feature Importances ************")
+    # Plot the feature importances of the forest
+    fi = pd.DataFrame(sorted(zip(map(lambda x: round(x, 4),
+                                    model.feature_importances_ ),
+                                    cv.get_feature_names()),
+                                    reverse=True),
+                            columns=['Importance', 'Feature'] )
+
+    # plot chart top 10 features
+    top_n = 10
+    ax = fi.head(top_n).plot.bar(x='Feature', y='Importance')
+    ax.set_xlabel("Features")
+    ax.set_ylabel("Importance")
+    plt.show()
+
+
     # save model
     save_model_filename = "model.joblib"
     print("Saving Model to", "model.joblib" )
     from sklearn.externals import joblib
-    joblib.dump(model, save_model_filename)
+    joblib.dump(max_model, save_model_filename)
 
     return max_model, max_thresh, max_profit
-
-
-
 
 
 
@@ -477,12 +492,23 @@ def sampling_main(model, filepath, cost_benefit, range_params=(0.35, 0.65, 0.05)
         print('\t{:.2f} ->\t{:.5f}'.format(ratio, profit))
 
 
-    X_train, X_test, y_train, y_test = get_train_test(filepath)
+    X_train_raw, X_test_raw, y_train, y_test = get_train_test(filepath)
+
+    # Bag of words model
+    cv = TfidfVectorizer(max_features = 1000, stop_words= "english")
+    print(cv)
+
+    X_train = cv.fit_transform(X_train_raw).toarray()
+    X_test = cv.transform(X_test_raw).toarray()
+
+
+
     model.fit(X_train, y_train)
     y_predict = model.predict(X_test)
     confusion_mat = standard_confusion_matrix(y_test, y_predict)
     profit = np.sum(confusion_mat * cost_benefit) / len(y_test)
     original_ratio = np.mean(y_train)
+
     print('Profit from original ratio:')
     print_ratio_profit(original_ratio, profit)
     for sampling_techinque, name in zip([undersample, oversample, smote],
@@ -500,9 +526,10 @@ def sampling_main(model, filepath, cost_benefit, range_params=(0.35, 0.65, 0.05)
 if __name__ == '__main__':
     print("*********** Training Model ************")
     corpus_filepath = './corpus.csv'
-    print("Using followin data file as input:", corpus_filepath)
+    print("Input File:", corpus_filepath)
 
     cost_benefit = np.array([[100, -10], [0, 0]])
     max_model, max_thresh, max_profit = profit_curve_main(corpus_filepath, cost_benefit)
     sampling_main(max_model, corpus_filepath, cost_benefit)
+
     print("*********** End ************")
