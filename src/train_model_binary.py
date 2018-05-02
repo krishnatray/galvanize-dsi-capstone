@@ -196,11 +196,15 @@ def plot_model_profits(model_profits, save_path=None):
     plt.xlabel("Percentage of test instances (decreasing by score)")
     plt.ylabel("Profit")
     plt.legend(loc='best')
-    if save_path:
-        plt.savefig(save_path)
-    else:
-        #plt.show()
 
+    plt.savefig("profit_curves.png")
+# =============================================================================
+#     if save_path:
+#         plt.savefig(save_path)
+#     else:
+#         plt.show()
+#
+# =============================================================================
 
 def find_best_threshold(model_profits):
     """Find model-threshold combo that yields highest profit.
