@@ -65,8 +65,24 @@ def mapper(category):
 # =============================================================================
 
 # importing the processed dataset
+
 file_name="corpus.csv"
-data = pd.read_csv(file_name)
+
+############################3
+sample_size = 0
+if len(sys.argv) > 1 and int(sys.argv[1]) > 0 :
+        sample_size = int(sys.argv[1])
+        print("Sample Size ", sample_size)
+
+        data = pd.read_csv(file_name)[:sample_size]
+else:
+        print("Reading Whole dataset..")
+        data = pd.read_csv(file_name)
+        print("Data size ", data.shape)
+
+
+
+
 
 # creating target column from speciality
 data['target'] = data['specialty']
@@ -84,7 +100,7 @@ X = data.corpus
 y = le.fit_transform(data.target)
 
 # split into train test
-X_train_raw, X_test_raw, y_train, y_test = train_test_split(X, y,test_size=0.25, random_state=0)
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.25, random_state=0)
 
 
 # Bag of words model
@@ -114,6 +130,8 @@ print("MultinomialNB...")
 model = MultinomialNB()
 model.fit(X_train, y_train)
 
+print(model)
+
 #predicting the test results
 y_pred = model.predict(X_test)
 y_pred_proba = model.predict_proba(X_test)
@@ -133,6 +151,8 @@ print("GradientBoosting Classifier...")
 from sklearn.ensemble import GradientBoostingClassifier
 model = GradientBoostingClassifier(learning_rate=0.01, random_state=0)
 model.fit(X_train, y_train)
+
+print(model)
 
 #predicting the test results
 y_pred = model.predict(X_test)
