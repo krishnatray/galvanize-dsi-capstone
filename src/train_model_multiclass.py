@@ -35,6 +35,7 @@ import re
 import warnings
 warnings.simplefilter('ignore', DeprecationWarning)
 #%matplotlib inline
+import xgboost
 
 
 def mapper(category):
@@ -193,12 +194,13 @@ print("Accuracy Score Test:", accuracy_score(y_test, y_pred, normalize = True))
 #
 # =============================================================================
 
-# save model
+
+ # save model
 save_model_filename = "docreach_model_multiclass.pkl"
 print(f"Saving Model to {save_model_filename}...")
-
 from sklearn.externals import joblib
 joblib.dump(model, save_model_filename)
+
 
 
 #################### Roc Curve ###########################
