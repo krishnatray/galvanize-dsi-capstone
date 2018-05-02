@@ -14,6 +14,12 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc, classification_rep
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import KNeighborsClassifier
+#from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import label_binarize
+#from sklearn.multiclass import OneVsRestClassifier
+from scipy import interp
+from itertools import cycle
 #from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
@@ -106,7 +112,7 @@ X_train_raw, X_test_raw, y_train, y_test = train_test_split(X, y, stratify=y, te
 # Bag of words model
 print("*"*40)
 print ("TFIDF vectorizer..." )
-from sklearn.feature_extraction.text import TfidfVectorizer
+#from sklearn.feature_extraction.text import TfidfVectorizer
 cv = TfidfVectorizer(max_features = 100, stop_words= "english")
 print(cv)
 
@@ -128,7 +134,7 @@ print("*"*40)
 print("MultinomialNB...")
 #from sklearn.naive_bayes import MultinomialNB
 model = MultinomialNB()
-model.fit(X_train, y_train)
+y_score = model.fit(X_train, y_train)
 
 print(model)
 
@@ -150,7 +156,7 @@ print("*"*40)
 print("GradientBoosting Classifier...")
 from sklearn.ensemble import GradientBoostingClassifier
 model = GradientBoostingClassifier(learning_rate=0.01, random_state=0)
-model.fit(X_train, y_train)
+y_score = model.fit(X_train, y_train)
 
 print(model)
 
@@ -194,6 +200,9 @@ print(f"Saving Model to {save_model_filename}...")
 from sklearn.externals import joblib
 joblib.dump(model, save_model_filename)
 
+
+#################### Roc Curve ###########################
+# TBD
 
 
 print("************ End *************")
