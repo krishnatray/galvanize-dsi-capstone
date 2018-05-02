@@ -199,7 +199,7 @@ def plot_model_profits(model_profits, save_path=None):
     if save_path:
         plt.savefig(save_path)
     else:
-        plt.show()
+        #plt.show()
 
 
 def find_best_threshold(model_profits):
@@ -320,7 +320,7 @@ def profit_curve_main(filepath, cost_benefit):
     ax = fi.head(top_n).plot.bar(x='Feature', y='Importance')
     ax.set_xlabel("Features")
     ax.set_ylabel("Importance")
-    plt.show()
+    #plt.show()
 
 
     # save model
