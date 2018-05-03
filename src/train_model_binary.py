@@ -258,8 +258,8 @@ def profit_curve_main(filepath, cost_benefit):
     X_test = cv.transform(X_test_raw).toarray()
 
 
-    #models = [RF(), LR(), GBC(), SVC(probability=True)]
-    models = [MultinomialNB(), GaussianNB(), LR(), RF(), GBC(), KNN()]
+    #models = [RF(n_jobs=-1), LR(n_jobs=-1), GBC(), SVC(probability=True)]
+    models = [MultinomialNB(), GaussianNB(), RF(n_jobs=-1), GBC(), KNN()]
 
     print("Models ", models)
 
@@ -508,6 +508,7 @@ def sampling_main(model, filepath, cost_benefit, range_params=(0.35, 0.65, 0.05)
 
 
     model.fit(X_train, y_train)
+    print(model)
     y_predict = model.predict(X_test)
     confusion_mat = standard_confusion_matrix(y_test, y_predict)
     profit = np.sum(confusion_mat * cost_benefit) / len(y_test)
