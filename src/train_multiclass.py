@@ -89,8 +89,6 @@ else:
 
 
 
-
-
 # creating target column from speciality
 data['target'] = data['specialty']
 
