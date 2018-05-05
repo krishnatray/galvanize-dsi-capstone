@@ -226,7 +226,7 @@ def find_best_threshold(model_profits):
     summary_list = []
     for model, profits, thresholds in model_profits:
         max_index = np.argmax(profits)
-        print("Model:", model)
+        #print("Model:", model)
         summary_list.append([model.__class__.__name__, profits[max_index], thresholds[max_index] ])
         if not max_model or profits[max_index] > max_profit:
             max_model = model
@@ -248,14 +248,14 @@ def profit_curve_main(filepath, cost_benefit):
                                           | FN | TN |
                                           -----------
     """
-    print("Calling get_train_test()...")
+
     X_train_raw, X_test_raw, y_train, y_test = get_train_test(filepath)
-    print("Returned from get_train_test()", X_train_raw.shape, X_test_raw.shape, y_test.shape, y_train.shape)
+    print("Training & Test", X_train_raw.shape, X_test_raw.shape, y_train.shape, y_test.shape)
 
     # Bag of words model
     print ("TFIDF vectorizer..." )
     cv = TfidfVectorizer(max_features = 100, stop_words= "english")
-    print(cv)
+    #print(cv)
 
     X_train = cv.fit_transform(X_train_raw).toarray()
     X_test = cv.transform(X_test_raw).toarray()
@@ -267,7 +267,7 @@ def profit_curve_main(filepath, cost_benefit):
 
     model_profits = []
     for model in models:
-        print(model)
+        print(model.__class__.__name__)
         profits, thresholds = get_model_profits(model, cost_benefit,
                                                 X_train, X_test,
                                                 y_train, y_test)
