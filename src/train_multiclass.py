@@ -7,13 +7,14 @@
 #importing the libraries
 from sklearn.ensemble import GradientBoostingClassifier as GBC
 from sklearn.ensemble import RandomForestClassifier as RF
-from sklearn.linear_model import LogisticRegression as LR
-from sklearn.naive_bayes import MultinomialNB, GaussianNB
-from sklearn.neighbors import KNeighborsClassifier as KNN
+from sklearn.naive_bayes import MultinomialNB as MNB
+from xgboost import XGBClassifier as XGB
+
+#from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.metrics import confusion_matrix, roc_curve, auc, classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.neighbors import KNeighborsClassifier
+#from sklearn.neighbors import KNeighborsClassifier
 #from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
@@ -21,8 +22,7 @@ from sklearn.preprocessing import label_binarize
 from scipy import interp
 from itertools import cycle
 #from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
+#from sklearn.svm import SVC
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -33,9 +33,9 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 import re
 import warnings
+from sklearn.externals import joblib
 warnings.simplefilter('ignore', DeprecationWarning)
 #%matplotlib inline
-import xgboost
 
 
 def mapper(category):
@@ -81,13 +81,12 @@ if len(sys.argv) > 1 and int(sys.argv[1]) > 0 :
         sample_size = int(sys.argv[1])
         print("Sample Size ", sample_size)
 
-        data = pd.read_csv(file_name)[:sample_size]
+        data = pd.read_csv(file_name).sample( n = sample_size)
 else:
         print("Reading Whole dataset..")
         data = pd.read_csv(file_name)
-        print("Data size ", data.shape)
 
-
+print("Data size:", data.shape)
 
 # creating target column from speciality
 data['target'] = data['specialty']
@@ -112,8 +111,9 @@ X_train_raw, X_test_raw, y_train, y_test = train_test_split(X, y, stratify=y, te
 print("*"*40)
 print ("TFIDF vectorizer..." )
 #from sklearn.feature_extraction.text import TfidfVectorizer
-cv = TfidfVectorizer(max_features = 100, stop_words= "english")
+cv = TfidfVectorizer(max_features = 1500, stop_words= "english")
 print(cv)
+
 
 X_train = cv.fit_transform(X_train_raw).toarray()
 X_test = cv.transform(X_test_raw).toarray()
@@ -128,49 +128,32 @@ X_test = cv.transform(X_test_raw).toarray()
 # X_test_scaled = sc.transform(X_test_cv)
 # =============================================================================
 
-# Fitting MultinomialNB
-print("*"*40)
-print("MultinomialNB...")
-#from sklearn.naive_bayes import MultinomialNB
-model = MultinomialNB()
-y_score = model.fit(X_train, y_train)
+classifiers = { 'MultinomialNB' : MNB(),
+               'RandomForest': RF(n_jobs=-1),
+               'GradientBoosting': GBC(),
+               'xgb': XGB()}
 
-print(model)
+for model_name, model in classifiers.items():
+    # Fitting MultinomialNB
+    print("="*60)
+    print(f"Model: {model}...")
+    y_score = model.fit(X_train, y_train)
+    print(model)
+    #predicting the test results
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)
 
-#predicting the test results
-y_pred = model.predict(X_test)
-y_pred_proba = model.predict_proba(X_test)
+    #Making the confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    #Confusion Matrix
+    print(pd.DataFrame(cm))
+    print(classification_report(y_test, y_pred))
+    print("Accuracy Score Train:", accuracy_score(y_train, model.predict(X_train), normalize = True))
+    print("Accuracy Score Test:", accuracy_score(y_test, y_pred, normalize = True))
 
-#Making the confusion Matrix
-cm = confusion_matrix(y_test, y_pred)
-#Confusion Matrix
-print(pd.DataFrame(cm))
-print(classification_report(y_test, y_pred))
-print("Accuracy Score Train:", accuracy_score(y_train, model.predict(X_train), normalize = True))
-print("Accuracy Score Test:", accuracy_score(y_test, y_pred, normalize = True))
-
-
-# Fitting GradoientBoosting
-print("*"*40)
-print("GradientBoosting Classifier...")
-from sklearn.ensemble import GradientBoostingClassifier
-model = GradientBoostingClassifier(learning_rate=0.01, random_state=0)
-y_score = model.fit(X_train, y_train)
-
-print(model)
-
-#predicting the test results
-y_pred = model.predict(X_test)
-y_pred_proba = model.predict_proba(X_test)
-
-#Making the confusion Matrix
-cm_gb = confusion_matrix(y_test, y_pred)
-#Confusion Matrix
-print(pd.DataFrame(cm_gb))
-print(classification_report(y_test, y_pred))
-print("Accuracy Score Train:", accuracy_score(y_train, model.predict(X_train), normalize = True))
-print("Accuracy Score Test:", accuracy_score(y_test, y_pred, normalize = True))
-
+    file_name = f"{model_name}_multiclass.pkl"
+    print(f"Saving GBC Model to {file_name}...")
+    joblib.dump(model, file_name)
 
 
 # Feature Importances
@@ -193,11 +176,13 @@ print("Accuracy Score Test:", accuracy_score(y_test, y_pred, normalize = True))
 # =============================================================================
 
 
- # save model
-save_model_filename = "docreach_model_multiclass.pkl"
-print(f"Saving Model to {save_model_filename}...")
-from sklearn.externals import joblib
-joblib.dump(model, save_model_filename)
+# =============================================================================
+#  # save model
+# save_model_filename = "docreach_model_multiclass.pkl"
+# print(f"Saving Model to {save_model_filename}...")
+# from sklearn.externals import joblib
+# joblib.dump(model, save_model_filename)
+# =============================================================================
 
 
 

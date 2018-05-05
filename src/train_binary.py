@@ -8,6 +8,8 @@ from sklearn.ensemble import RandomForestClassifier as RF
 from sklearn.linear_model import LogisticRegression as LR
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.neighbors import KNeighborsClassifier as KNN
+from xgboost import XGBClassifier as XGB
+
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -171,7 +173,6 @@ def get_model_profits(model, cost_benefit, X_train, X_test, y_train, y_test):
     -------
     model_profits : model, profits, thresholds
     """
-    print("Fitting Model...")
     model.fit(X_train, y_train)
     predicted_probs = model.predict_proba(X_test)[:, 1]
     profits, thresholds = profit_curve(cost_benefit, predicted_probs, y_test)
@@ -222,14 +223,16 @@ def find_best_threshold(model_profits):
     max_model = None
     max_threshold = None
     max_profit = None
+    summary_list = []
     for model, profits, thresholds in model_profits:
         max_index = np.argmax(profits)
-        print("Model:", model, "Max Profit:", profits[max_index])
+        print("Model:", model)
+        summary_list.append([model.__class__.__name__, profits[max_index], thresholds[max_index] ])
         if not max_model or profits[max_index] > max_profit:
             max_model = model
             max_threshold = thresholds[max_index]
             max_profit = profits[max_index]
-    return max_model, max_threshold, max_profit
+    return max_model, max_threshold, max_profit, summary_list
 
 
 def profit_curve_main(filepath, cost_benefit):
@@ -259,9 +262,8 @@ def profit_curve_main(filepath, cost_benefit):
 
 
     #models = [RF(n_jobs=-1), LR(n_jobs=-1), GBC(), SVC(probability=True)]
-    models = [MultinomialNB(), GaussianNB(), RF(n_jobs=-1), GBC(), KNN()]
+    models = [MultinomialNB(), GaussianNB(), RF(n_jobs=-1), GBC(), XGB()]
 
-    print("Models ", models)
 
     model_profits = []
     for model in models:
@@ -270,18 +272,27 @@ def profit_curve_main(filepath, cost_benefit):
                                                 X_train, X_test,
                                                 y_train, y_test)
         model_profits.append((model, profits, thresholds))
+
     #plot_model_profits(model_profits, "proft_curve.png")
     plot_model_profits(model_profits)
 
-    max_model, max_thresh, max_profit = find_best_threshold(model_profits)
+    max_model, max_thresh, max_profit, summary_list = find_best_threshold(model_profits)
     max_labeled_positives = max_model.predict_proba(X_test) >= max_thresh
     proportion_positives = max_labeled_positives.mean()
+
+    print("***************** Summary Report *****************")
+
+    print(pd.DataFrame(summary_list, columns=['Classifier','Profit', 'Threshold' ]))
+
+    print("--------------------------------------------------")
     reporting_string = ('Best model:\t\t{}\n'
                         'Best threshold:\t\t{:.2f}\n'
                         'Resulting profit:\t{}\n'
                         'Proportion positives:\t{:.2f}')
+
     print(reporting_string.format(max_model.__class__.__name__, max_thresh,
                                   max_profit, proportion_positives))
+    print("--------------------------------------------------")
 
     model = max_model
     y_pred = model.predict(X_test)
@@ -311,7 +322,7 @@ def profit_curve_main(filepath, cost_benefit):
 
 
     # Feature Importances
-    print("********* RF Feature Importances ************")
+    print("***************** Feature Importances *****************")
     # Plot the feature importances of the forest
     fi = pd.DataFrame(sorted(zip(map(lambda x: round(x, 4),
                                     model.feature_importances_ ),
@@ -319,8 +330,13 @@ def profit_curve_main(filepath, cost_benefit):
                                     reverse=True),
                             columns=['Importance', 'Feature'] )
 
+
     # plot chart top 10 features
     top_n = 10
+
+    print(f"Top {top_n} features")
+    print(fi.head(top_n))
+
     ax = fi.head(top_n).plot.bar(x='Feature', y='Importance')
     ax.set_xlabel("Features")
     ax.set_ylabel("Importance")
@@ -529,12 +545,15 @@ def sampling_main(model, filepath, cost_benefit, range_params=(0.35, 0.65, 0.05)
 
 
 if __name__ == '__main__':
-    print("*********** Training Model ************")
+    print("***************** Training Model *****************")
     corpus_filepath = './corpus.csv'
     print("Input File:", corpus_filepath)
 
     cost_benefit = np.array([[100, -10], [0, 0]])
-    max_model, max_thresh, max_profit = profit_curve_main(corpus_filepath, cost_benefit)
-    sampling_main(max_model, corpus_filepath, cost_benefit)
 
-    print("*********** End ************")
+    #from collections import defaultdict
+
+    max_model, max_thresh, max_profit = profit_curve_main(corpus_filepath, cost_benefit)
+    #sampling_main(max_model, corpus_filepath, cost_benefit)
+
+    print("***************** End *****************")
