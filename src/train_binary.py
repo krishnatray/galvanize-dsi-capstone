@@ -18,10 +18,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.externals import joblib
+import warnings
+warnings.simplefilter('ignore', DeprecationWarning)
 import sys
 
 
-def get_train_test(filepath):
+def get_train_test(file_name):
     """Get standardized training and testing data sets from csv at given
     filepath.
 
@@ -37,7 +40,7 @@ def get_train_test(filepath):
     y_test  : ndarray - 1D
     """
 # =============================================================================
-#     raw_df = pd.read_csv(filepath)
+#     raw_df = pd.read_csv(file_name)
 #     corpus_df = make_clean_corpus_df(raw_df)
 #     y = corpus_df.pop('corpus').values
 #     X = corpus_df.values
@@ -48,7 +51,7 @@ def get_train_test(filepath):
 #     X_test = scaler.transform(X_test)
 # =============================================================================
     #importing the processed dataset
-    file_name="corpus.csv"
+    #file_name="./data/corpus.csv"
 
     if len(sys.argv) > 1 and int(sys.argv[1]) > 0 :
         sample_size = int(sys.argv[1])
@@ -230,12 +233,16 @@ def find_best_threshold(model_profits):
     return max_model, max_threshold, max_profit, summary_list
 
 
-def profit_curve_main(filepath, cost_benefit):
-    """Main function to test profit curve code.
 
-    Parameters
-    ----------
-    filepath     : str - path to find corpus.csv
+
+
+
+if __name__ == '__main__':
+    print("***************** Training Model *****************")
+    corpus_filepath = './data/corpus.csv'
+    print("Input File:", corpus_filepath)
+
+    """
     cost_benefit  : ndarray - 2D, with profit values corresponding to:
                                           -----------
                                           | TP | FP |
@@ -243,8 +250,12 @@ def profit_curve_main(filepath, cost_benefit):
                                           | FN | TN |
                                           -----------
     """
+    cost_benefit = np.array([[100, -10], [0, 0]])
 
-    X_train_raw, X_test_raw, y_train, y_test = get_train_test(filepath)
+
+    X_train_raw, X_test_raw, y_train, y_test = get_train_test(corpus_filepath)
+
+
     print("Training & Test", X_train_raw.shape, X_test_raw.shape, y_train.shape, y_test.shape)
 
     # Bag of words model
@@ -294,7 +305,6 @@ def profit_curve_main(filepath, cost_benefit):
     y_pred_proba = model.predict_proba(X_test)
 
     #Making the confusion Matrix
-    from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(y_test, y_pred)
     tn, fp, fn, tp = cm.ravel()
 
@@ -326,7 +336,7 @@ def profit_curve_main(filepath, cost_benefit):
                             columns=['Importance', 'Feature'] )
 
     # Save top features to CSV
-    fi.to_csv("top_features_binary.csv")
+    fi.to_csv("./data/top_features_binary.csv")
 
 
     # plot chart top 10 features
@@ -342,23 +352,10 @@ def profit_curve_main(filepath, cost_benefit):
 
 
     # save model
-    save_model_filename = "model.joblib"
-    print("Saving Model to", "model.joblib" )
-    from sklearn.externals import joblib
-    joblib.dump(max_model, save_model_filename)
+    model_filename = "./model/binary_model.pkl"
+    print("Saving Model to {model_filename}" )
 
-    return max_model, max_thresh, max_profit
+    joblib.dump(max_model, model_filename)
 
-
-if __name__ == '__main__':
-    print("***************** Training Model *****************")
-    corpus_filepath = './corpus.csv'
-    print("Input File:", corpus_filepath)
-
-    cost_benefit = np.array([[100, -10], [0, 0]])
-
-    #from collections import defaultdict
-
-    max_model, max_thresh, max_profit = profit_curve_main(corpus_filepath, cost_benefit)
 
     print("***************** End *****************")

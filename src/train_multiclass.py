@@ -28,9 +28,9 @@ import pandas as pd
 import sys
 #import nltk
 #nltk.download('stopwords')
-from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
-import re
+#from nltk.corpus import stopwords
+#from nltk.stem.porter import PorterStemmer
+#import re
 import warnings
 from sklearn.externals import joblib
 warnings.simplefilter('ignore', DeprecationWarning)
@@ -72,9 +72,11 @@ def mapper(category):
 
 # importing the processed dataset
 
-file_name="corpus.csv"
+file_name="./data/corpus.csv"
+model_dir ="./model"
+data_dir ="./data"
 
-############################3
+############################
 sample_size = 0
 if len(sys.argv) > 1 and int(sys.argv[1]) > 0 :
         sample_size = int(sys.argv[1])
@@ -153,7 +155,7 @@ for model_name, model in classifiers.items():
     print("Accuracy Score Train:", accuracy_score(y_train, model.predict(X_train), normalize = True))
     print("Accuracy Score Test:", accuracy_score(y_test, y_pred, normalize = True))
 
-    file_name = f"{model_name}_multiclass.pkl"
+    file_name = f"{model_dir}/{model_name}_multiclass.pkl"
     print(f"Saving GBC Model to {file_name}...")
     joblib.dump(model, file_name)
 
@@ -168,7 +170,7 @@ fi = pd.DataFrame(sorted(zip(map(lambda x: round(x, 4),
                         columns=['Importance', 'Feature'] )
 
 # Save top features to CSV
-fi.to_csv("top_features_multiclass.csv")
+fi.to_csv(f"{data_dir}/top_features_multiclass.csv")
 
 # plot chart top 10 features
 top_n = 10
