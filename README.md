@@ -5,6 +5,8 @@
 ## Overview
 A large social media marketing firm wants to target doctors / physicians based on their practice area. For example, A marketing campaign to target Cardiologists for heart related news feed.
 
+![alt text](https://raw.githubusercontent.com/krishnatray/galvanize-dsi-capstone/master/presentation/word_cloud_cardiologists.png)
+
 ## Scope
 The marketing firm wants to predict physicians under medical specialties based upon procedures performed over the past year
 
@@ -47,4 +49,4 @@ Accuracy Score Train: 0.789
 Accuracy Score Test: 0.7708
 
 ## Next Steps
-TBD
+Exolore new features viz. number of patients 
