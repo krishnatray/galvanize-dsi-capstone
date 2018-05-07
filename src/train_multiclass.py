@@ -90,9 +90,13 @@ print("Data size:", data.shape)
 # creating target column from speciality
 data['target'] = data['specialty']
 
-# keeping top5 catgories. combining rest categories as Other
+
+# keeping top_n catgories. combining rest categories as Other
 top5 = data['target'].value_counts()[:5]
 data['target'] = data.target.apply(mapper)
+
+print("Class counts:")
+print(pd.DataFrame(data['target'].value_counts()))
 
 
 # Label Encoder
@@ -135,7 +139,6 @@ classifiers = { 'MultinomialNB' : MNB(),
 for model_name, model in classifiers.items():
     # Fitting MultinomialNB
     print("="*60)
-    print(f"Model: {model}...")
     y_score = model.fit(X_train, y_train)
     print(model)
     #predicting the test results
@@ -163,6 +166,9 @@ fi = pd.DataFrame(sorted(zip(map(lambda x: round(x, 4),
                                 cv.get_feature_names()),
                                 reverse=True),
                         columns=['Importance', 'Feature'] )
+
+# Save top features to CSV
+fi.to_csv("top_features_multiclass.csv")
 
 # plot chart top 10 features
 top_n = 10

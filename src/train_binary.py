@@ -49,24 +49,21 @@ def get_train_test(filepath):
 # =============================================================================
     #importing the processed dataset
     file_name="corpus.csv"
-    data = pd.read_csv(file_name)
 
     if len(sys.argv) > 1 and int(sys.argv[1]) > 0 :
         sample_size = int(sys.argv[1])
-
         print("Taking first", sample_size, "rows from dataset..")
-
-        # split into train test
-        print("Class counts:")
-        print(pd.DataFrame(data['is_cardiologist'][:sample_size].value_counts()))
-        y = data['is_cardiologist'].values[:sample_size]
-        X_train, X_test, y_train, y_test = train_test_split(data.corpus[:sample_size], y,test_size=0.25, random_state=0)
+        data = pd.read_csv(file_name).sample( n = sample_size)
     else:
-        # split into train test
-        print("Class counts:")
-        print(pd.DataFrame(data['is_cardiologist'].value_counts()))
-        y = data['is_cardiologist'].values
-        X_train, X_test, y_train, y_test = train_test_split(data.corpus, y,test_size=0.25, random_state=0)
+        print("Reading whole dataset..")
+        data = pd.read_csv(file_name)
+
+
+    # split into train test
+    print("Class counts:")
+    print(pd.DataFrame(data['is_cardiologist'].value_counts()))
+    y = data['is_cardiologist'].values
+    X_train, X_test, y_train, y_test = train_test_split(data.corpus, y,test_size=0.25, random_state=0)
 
 
     return X_train, X_test, y_train, y_test
@@ -328,6 +325,9 @@ def profit_curve_main(filepath, cost_benefit):
                                     reverse=True),
                             columns=['Importance', 'Feature'] )
 
+    # Save top features to CSV
+    fi.to_csv("top_features_binary.csv")
+
 
     # plot chart top 10 features
     top_n = 10
@@ -341,8 +341,6 @@ def profit_curve_main(filepath, cost_benefit):
     plt.show()
 
 
-
-
     # save model
     save_model_filename = "model.joblib"
     print("Saving Model to", "model.joblib" )
@@ -350,96 +348,6 @@ def profit_curve_main(filepath, cost_benefit):
     joblib.dump(max_model, save_model_filename)
 
     return max_model, max_thresh, max_profit
-
-
-
-
-def div_count_pos_neg(X, y):
-    """Helper function to divide X & y into positive and negative classes
-    and counts up the number in each.
-
-    Parameters
-    ----------
-    X : ndarray - 2D
-    y : ndarray - 1D
-
-    Returns
-    -------
-    negative_count : Int
-    positive_count : Int
-    X_positives    : ndarray - 2D
-    X_negatives    : ndarray - 2D
-    y_positives    : ndarray - 1D
-    y_negatives    : ndarray - 1D
-    """
-    negatives, positives = y == 0, y == 1
-    negative_count, positive_count = np.sum(negatives), np.sum(positives)
-    X_positives, y_positives = X[positives], y[positives]
-    X_negatives, y_negatives = X[negatives], y[negatives]
-    return negative_count, positive_count, X_positives, \
-           X_negatives, y_positives, y_negatives
-
-
-def undersample(X, y, tp):
-    """Randomly discards negative observations from X & y to achieve the
-    target proportion of positive to negative observations.
-
-    Parameters
-    ----------
-    X  : ndarray - 2D
-    y  : ndarray - 1D
-    tp : float - range [0.5, 1], target proportion of positive class observations
-
-    Returns
-    -------
-    X_undersampled : ndarray - 2D
-    y_undersampled : ndarray - 1D
-    """
-    if tp < np.mean(y):
-        return X, y
-    neg_count, pos_count, X_pos, X_neg, y_pos, y_neg = div_count_pos_neg(X, y)
-    negative_sample_rate = (pos_count * (1 - tp)) / (neg_count * tp)
-    negative_keepers = np.random.choice(a=[False, True], size=neg_count,
-                                        p=[1 - negative_sample_rate,
-                                           negative_sample_rate])
-    X_negative_undersampled = X_neg[negative_keepers]
-    y_negative_undersampled = y_neg[negative_keepers]
-    X_undersampled = np.vstack((X_negative_undersampled, X_pos))
-    y_undersampled = np.concatenate((y_negative_undersampled, y_pos))
-
-    return X_undersampled, y_undersampled
-
-
-def oversample(X, y, tp):
-    """Randomly choose positive observations from X & y, with replacement
-    to achieve the target proportion of positive to negative observations.
-
-    Parameters
-    ----------
-    X  : ndarray - 2D
-    y  : ndarray - 1D
-    tp : float - range [0, 1], target proportion of positive class observations
-
-    Returns
-    -------
-    X_undersampled : ndarray - 2D
-    y_undersampled : ndarray - 1D
-    """
-    if tp < np.mean(y):
-        return X, y
-    neg_count, pos_count, X_pos, X_neg, y_pos, y_neg = div_count_pos_neg(X, y)
-    positive_range = np.arange(pos_count)
-    positive_size = (tp * neg_count) / (1 - tp)
-    positive_idxs = np.random.choice(a=positive_range,
-                                     size=int(positive_size),
-                                     replace=True)
-    X_positive_oversampled = X_pos[positive_idxs]
-    y_positive_oversampled = y_pos[positive_idxs]
-    X_oversampled = np.vstack((X_positive_oversampled, X_neg))
-    y_oversampled = np.concatenate((y_positive_oversampled, y_neg))
-
-    return X_oversampled, y_oversampled
-
 
 
 if __name__ == '__main__':
