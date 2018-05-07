@@ -5,18 +5,16 @@
 #
 from sklearn.ensemble import GradientBoostingClassifier as GBC
 from sklearn.ensemble import RandomForestClassifier as RF
-from sklearn.linear_model import LogisticRegression as LR
+#from sklearn.linear_model import LogisticRegression as LR
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
-from sklearn.neighbors import KNeighborsClassifier as KNN
+#from sklearn.neighbors import KNeighborsClassifier as KNN
 from xgboost import XGBClassifier as XGB
 
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.neighbors import KNeighborsClassifier
 #from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
+#from sklearn.svm import SVC
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -340,7 +338,9 @@ def profit_curve_main(filepath, cost_benefit):
     ax = fi.head(top_n).plot.bar(x='Feature', y='Importance')
     ax.set_xlabel("Features")
     ax.set_ylabel("Importance")
-    #plt.show()
+    plt.show()
+
+
 
 
     # save model
@@ -441,108 +441,6 @@ def oversample(X, y, tp):
     return X_oversampled, y_oversampled
 
 
-def smote(X, y, tp, k=None):
-    """Generates new observations from the positive (minority) class.
-    For details, see: https://www.jair.org/media/953/live-953-2037-jair.pdf
-
-    Parameters
-    ----------
-    X  : ndarray - 2D
-    y  : ndarray - 1D
-    tp : float - [0, 1], target proportion of positive class observations
-
-    Returns
-    -------
-    X_smoted : ndarray - 2D
-    y_smoted : ndarray - 1D
-    """
-    if tp < np.mean(y):
-        return X, y
-    if k is None:
-        k = int(len(X) ** 0.5)
-
-    neg_count, pos_count, X_pos, X_neg, y_pos, y_neg = div_count_pos_neg(X, y)
-    knn = KNeighborsClassifier(n_neighbors=k)
-    knn.fit(X_pos, y_pos)
-    neighbors = knn.kneighbors(return_distance=False)
-
-    positive_size = (tp * neg_count) / (1 - tp)
-    smote_num = int(positive_size - pos_count)
-
-    rand_idxs = np.random.randint(0, pos_count, size=smote_num)
-    rand_nghb_idxs = np.random.randint(0, k, size=smote_num)
-    rand_pcts = np.random.random((smote_num, X.shape[1]))
-    smotes = []
-    for r_idx, r_nghb_idx, r_pct in zip(rand_idxs, rand_nghb_idxs, rand_pcts):
-        rand_pos, rand_pos_neighbors = X_pos[r_idx], neighbors[r_idx]
-        rand_pos_neighbor = X_pos[rand_pos_neighbors[r_nghb_idx]]
-        rand_dir = rand_pos_neighbor - rand_pos
-        rand_change = rand_dir * r_pct
-        smoted_point = rand_pos + rand_change
-        smotes.append(smoted_point)
-
-    X_smoted = np.vstack((X, np.array(smotes)))
-    y_smoted = np.concatenate((y, np.ones((smote_num,))))
-    return X_smoted, y_smoted
-
-
-def sampling_main(model, filepath, cost_benefit, range_params=(0.35, 0.65, 0.05)):
-    """Helper function to test smoting effectiveness.
-
-    Parameters
-    ----------
-    model        : sklearn model - needs to implement fit and predict
-    filepath     : str - path to find corpus.csv
-    cost_benefit : ndarray - 2D, with profit values corresponding to:
-                                          -----------
-                                          | TP | FP |
-                                          -----------
-                                          | FN | TN |
-                                          -----------
-    range_params : tuple - floats to pass to np.arange to
-    """
-    def print_ratio_profit(ratio, profit):
-        """Helper function to pretty print the sampleing ratio
-        and profit from it.
-        Parameters
-        ----------
-        ratio  : float - [0, 1]
-        profit : float
-        """
-        print('\t{:.2f} ->\t{:.5f}'.format(ratio, profit))
-
-
-    X_train_raw, X_test_raw, y_train, y_test = get_train_test(filepath)
-
-    # Bag of words model
-    cv = TfidfVectorizer(max_features = 1000, stop_words= "english")
-    print(cv)
-
-    X_train = cv.fit_transform(X_train_raw).toarray()
-    X_test = cv.transform(X_test_raw).toarray()
-
-
-
-    model.fit(X_train, y_train)
-    print(model)
-    y_predict = model.predict(X_test)
-    confusion_mat = standard_confusion_matrix(y_test, y_predict)
-    profit = np.sum(confusion_mat * cost_benefit) / len(y_test)
-    original_ratio = np.mean(y_train)
-
-    print('Profit from original ratio:')
-    print_ratio_profit(original_ratio, profit)
-    for sampling_techinque, name in zip([undersample, oversample, smote],
-                                ['undersampling', 'oversampling', 'smoting']):
-        print('Profit when {} to ratio of:'.format(name))
-        for ratio in np.arange(*range_params):
-            X_sampled, y_sampled = sampling_techinque(X_train, y_train, ratio)
-            model.fit(X_sampled, y_sampled)
-            y_predict = model.predict(X_test)
-            confusion_mat = standard_confusion_matrix(y_test, y_predict)
-            profit = np.sum(confusion_mat * cost_benefit) / float(len(y_test))
-            print_ratio_profit(ratio, profit)
-
 
 if __name__ == '__main__':
     print("***************** Training Model *****************")
@@ -554,6 +452,5 @@ if __name__ == '__main__':
     #from collections import defaultdict
 
     max_model, max_thresh, max_profit = profit_curve_main(corpus_filepath, cost_benefit)
-    #sampling_main(max_model, corpus_filepath, cost_benefit)
 
     print("***************** End *****************")

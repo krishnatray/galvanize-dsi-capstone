@@ -16,7 +16,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 #from sklearn.neighbors import KNeighborsClassifier
 #from sklearn.metrics import roc_curve, auc
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
 #from sklearn.multiclass import OneVsRestClassifier
 from scipy import interp
@@ -157,23 +156,24 @@ for model_name, model in classifiers.items():
 
 
 # Feature Importances
-# =============================================================================
-# print("********* RF Feature Importances ************")
-# # Plot the feature importances of the forest
-# fi = pd.DataFrame(sorted(zip(map(lambda x: round(x, 4),
-#                                 model.feature_importances_ ),
-#                                 cv.get_feature_names()),
-#                                 reverse=True),
-#                         columns=['Importance', 'Feature'] )
-#
-# # plot chart top 10 features
-# top_n = 10
-# ax = fi.head(top_n).plot.bar(x='Feature', y='Importance')
-# ax.set_xlabel("Features")
-# ax.set_ylabel("Importance")
-# plt.show()
-#
-# =============================================================================
+print("********* Feature Importances ************")
+# Plot the feature importances of the forest
+fi = pd.DataFrame(sorted(zip(map(lambda x: round(x, 4),
+                                model.feature_importances_ ),
+                                cv.get_feature_names()),
+                                reverse=True),
+                        columns=['Importance', 'Feature'] )
+
+# plot chart top 10 features
+top_n = 10
+print(f"Top {top_n} features")
+print(fi.head(top_n))
+
+ax = fi.head(top_n).plot.bar(x='Feature', y='Importance')
+ax.set_xlabel("Features")
+ax.set_ylabel("Importance")
+plt.show()
+
 
 
 # =============================================================================
