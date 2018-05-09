@@ -1,0 +1,15 @@
+
+	   	Accuracy precision recall  f1-score
+  	
+MultinomialNB	0.665	 0.67      0.67     0.66      
+GrBoosting  	0.698 	 0.67      0.70     0.66        
+RandomForest    0.708    0.68      0.71     0.68   
+XGBoost		0.688    0.65      0.69     0.65   
+
+
+ardiology	0
+Diagnostic Radiology	1
+Family Practice	2
+Internal Medicine	3
+Orthopedic Surgery	4
+Other	5

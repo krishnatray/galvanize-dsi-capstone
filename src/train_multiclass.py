@@ -11,26 +11,19 @@ from sklearn.naive_bayes import MultinomialNB as MNB
 from xgboost import XGBClassifier as XGB
 
 #from sklearn.neighbors import KNeighborsClassifier as KNN
-from sklearn.metrics import confusion_matrix, roc_curve, auc, classification_report, accuracy_score
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 #from sklearn.neighbors import KNeighborsClassifier
 #from sklearn.metrics import roc_curve, auc
-from sklearn.preprocessing import label_binarize
+from sklearn.metrics import f1_score, precision_score, recall_score
 #from sklearn.multiclass import OneVsRestClassifier
-from scipy import interp
-from itertools import cycle
 #from sklearn.preprocessing import StandardScaler
 #from sklearn.svm import SVC
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import sys
-#import nltk
-#nltk.download('stopwords')
-#from nltk.corpus import stopwords
-#from nltk.stem.porter import PorterStemmer
-#import re
+
 import warnings
 from sklearn.externals import joblib
 warnings.simplefilter('ignore', DeprecationWarning)
@@ -108,21 +101,29 @@ le = preprocessing.LabelEncoder()
 X = data.corpus
 y = le.fit_transform(data.target)
 
+## Save label encoder to disk
+le_file_name = f"{model_dir}/le_multiclass.pkl"
+print(f"Saving label encoder to {le_file_name}")
+joblib.dump(le, le_file_name)
+
+
 # split into train test
 X_train_raw, X_test_raw, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.25, random_state=0)
 
 
 # Bag of words model
 print("*"*40)
-print ("TFIDF vectorizer..." )
 #from sklearn.feature_extraction.text import TfidfVectorizer
 cv = TfidfVectorizer(max_features = 1500, stop_words= "english")
 print(cv)
 
-
 X_train = cv.fit_transform(X_train_raw).toarray()
 X_test = cv.transform(X_test_raw).toarray()
 
+## Save cv to disk
+file_name = f"{model_dir}/tfidf_multiclass.pkl"
+print(f"Saving tfidf count vector to {file_name}")
+joblib.dump(cv, file_name)
 
 
 # Feature Scaling
@@ -138,6 +139,10 @@ classifiers = { 'MultinomialNB' : MNB(),
                'GradientBoosting': GBC(),
                'xgb': XGB()}
 
+score_list_columns = ['model_name', 'accuracy', 'precision', 'recall', 'f1_score']
+score_list = []
+
+best_score = 0
 for model_name, model in classifiers.items():
     # Fitting MultinomialNB
     print("="*60)
@@ -148,16 +153,59 @@ for model_name, model in classifiers.items():
     y_pred_proba = model.predict_proba(X_test)
 
     #Making the confusion Matrix
-    cm = confusion_matrix(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred )
+
     #Confusion Matrix
     print(pd.DataFrame(cm))
     print(classification_report(y_test, y_pred))
-    print("Accuracy Score Train:", accuracy_score(y_train, model.predict(X_train), normalize = True))
-    print("Accuracy Score Test:", accuracy_score(y_test, y_pred, normalize = True))
+    accuracy_train = accuracy_score(y_train, model.predict(X_train), normalize = True)
+    accuracy_test = accuracy_score(y_test, y_pred, normalize = True)
+    print(f"Accuracy Score Train: {accuracy_train} Test:{accuracy_test}" )
 
-    file_name = f"{model_dir}/{model_name}_multiclass.pkl"
-    print(f"Saving GBC Model to {file_name}...")
-    joblib.dump(model, file_name)
+    model_score = f1_score(y_test, y_pred, average='weighted')
+    precision = precision_score(y_test, y_pred, average='weighted')
+    recall = recall_score(y_test, y_pred, average='weighted')
+    score_list.append([model_name, accuracy_test, precision, recall, model_score ] )
+
+    if model_score > best_score:
+        best_score = model_score
+        best_model = model
+        best_model_name = model_name
+
+score_df = pd.DataFrame( score_list, columns = score_list_columns)
+score_df.to_csv("multiclass_summary.csv")
+#     file_name = f"{model_dir}/{model_name}_multiclass.pkl"
+#     print(f"Saving GBC Model to {file_name}...")
+#     joblib.dump(model, file_name)
+
+print("=================== Selected Model ===================")
+print("")
+print(f"Best Model is: {best_model_name} F1 Score: {best_score}")
+print(score_df)
+
+
+y_score = best_model.fit(X_train, y_train)
+print(best_model)
+#predicting the test results
+y_pred = best_model.predict(X_test)
+y_pred_proba = best_model.predict_proba(X_test)
+
+#Making the confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+
+#Confusion Matrix
+print(pd.DataFrame(cm))
+print(classification_report(y_test, y_pred))
+accuracy_train = accuracy_score(y_train, best_model.predict(X_train), normalize = True)
+accuracy_test = accuracy_score(y_test, y_pred, normalize = True)
+print(" ")
+print(f"Accuracy Score Train: {round(accuracy_train,2)} Test:{round(accuracy_test,2)}" )
+
+
+file_name = f"{model_dir}/multiclass.pkl"
+print(f"Saving {best_model_name} to {file_name}")
+joblib.dump(model, file_name)
+
 
 
 # Feature Importances
@@ -173,30 +221,14 @@ fi = pd.DataFrame(sorted(zip(map(lambda x: round(x, 4),
 fi.to_csv(f"{data_dir}/top_features_multiclass.csv")
 
 # plot chart top 10 features
-top_n = 10
+top_n = 15
 print(f"Top {top_n} features")
 print(fi.head(top_n))
 
 ax = fi.head(top_n).plot.bar(x='Feature', y='Importance')
 ax.set_xlabel("Features")
 ax.set_ylabel("Importance")
-plt.show()
-
-
-
-# =============================================================================
-#  # save model
-# save_model_filename = "docreach_model_multiclass.pkl"
-# print(f"Saving Model to {save_model_filename}...")
-# from sklearn.externals import joblib
-# joblib.dump(model, save_model_filename)
-# =============================================================================
-
-
-
-#################### Roc Curve ###########################
-# TBD
-
+#plt.show()
 
 print("************ End *************")
 

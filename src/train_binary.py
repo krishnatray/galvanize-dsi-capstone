@@ -1,6 +1,6 @@
 #################################
 #
-# train_model_profit_curve.py
+# train_binary.py
 #
 #
 from sklearn.ensemble import GradientBoostingClassifier as GBC
@@ -46,9 +46,6 @@ def get_train_test(file_name):
 #     X = corpus_df.values
 #
 #     X_train, X_test, y_train, y_test = train_test_split(X, y)
-#     scaler = StandardScaler()
-#     X_train = scaler.fit_transform(X_train)
-#     X_test = scaler.transform(X_test)
 # =============================================================================
     #importing the processed dataset
     #file_name="./data/corpus.csv"
@@ -68,29 +65,7 @@ def get_train_test(file_name):
     y = data['is_cardiologist'].values
     X_train, X_test, y_train, y_test = train_test_split(data.corpus, y,test_size=0.25, random_state=0)
 
-
     return X_train, X_test, y_train, y_test
-
-
-# =============================================================================
-# def make_clean_corpus_df(df):
-#     """Cleans DataFrame loaded from corpus.csv.
-#
-#     Parameters
-#     ----------
-#     df : DataFrame
-#
-#     Returns
-#     -------
-#     DataFrame : Columns lowercased, spaces replaced with underscores,
-#                 Text data replaced with binarized ints.
-#     """
-#     df.columns = [col.lower().replace(' ', '_') for col in df.columns]
-#     df['corpus'] = (df['corpus'] == 'True.').astype(int)
-#     yes_no_cols = ["int'l_plan", "vmail_plan"]
-#     df[yes_no_cols] = (df[yes_no_cols] == "yes").astype(int)
-#     return df.drop(['state', 'area_code', 'phone'], axis=1)
-# =============================================================================
 
 
 def standard_confusion_matrix(y_true, y_pred):
@@ -197,13 +172,11 @@ def plot_model_profits(model_profits, save_path=None):
     plt.legend(loc='best')
 
     plt.savefig("profit_curves.png")
-# =============================================================================
-#     if save_path:
-#         plt.savefig(save_path)
-#     else:
-#         plt.show()
-#
-# =============================================================================
+    if save_path:
+        plt.savefig(save_path)
+    else:
+        plt.show()
+
 
 def find_best_threshold(model_profits):
     """Find model-threshold combo that yields highest profit.
@@ -259,16 +232,15 @@ if __name__ == '__main__':
     print("Training & Test", X_train_raw.shape, X_test_raw.shape, y_train.shape, y_test.shape)
 
     # Bag of words model
-    print ("TFIDF vectorizer..." )
-    cv = TfidfVectorizer(max_features = 100, stop_words= "english")
-    #print(cv)
+    cv = TfidfVectorizer(max_features = 1000, stop_words= "english")
+    print(cv)
 
     X_train = cv.fit_transform(X_train_raw).toarray()
     X_test = cv.transform(X_test_raw).toarray()
 
 
     #models = [RF(n_jobs=-1), LR(n_jobs=-1), GBC(), SVC(probability=True)]
-    models = [MultinomialNB(), GaussianNB(), RF(n_jobs=-1), GBC(), XGB()]
+    models = [MultinomialNB(), GaussianNB(), RF(n_jobs=-1), GBC(), XGB(n_jobs=-1)]
 
 
     model_profits = []
@@ -279,8 +251,8 @@ if __name__ == '__main__':
                                                 y_train, y_test)
         model_profits.append((model, profits, thresholds))
 
-    #plot_model_profits(model_profits, "proft_curve.png")
-    plot_model_profits(model_profits)
+    plot_model_profits(model_profits, "./presentation/proft_curve.png")
+    #plot_model_profits(model_profits)
 
     max_model, max_thresh, max_profit, summary_list = find_best_threshold(model_profits)
     max_labeled_positives = max_model.predict_proba(X_test) >= max_thresh
@@ -339,8 +311,8 @@ if __name__ == '__main__':
     fi.to_csv("./data/top_features_binary.csv")
 
 
-    # plot chart top 10 features
-    top_n = 10
+    # plot chart top n features
+    top_n = 15
 
     print(f"Top {top_n} features")
     print(fi.head(top_n))
@@ -348,12 +320,12 @@ if __name__ == '__main__':
     ax = fi.head(top_n).plot.bar(x='Feature', y='Importance')
     ax.set_xlabel("Features")
     ax.set_ylabel("Importance")
-    plt.show()
+    #plt.show()
 
 
     # save model
     model_filename = "./model/binary_model.pkl"
-    print("Saving Model to {model_filename}" )
+    print(f"Saving Model to {model_filename}" )
 
     joblib.dump(max_model, model_filename)
 
