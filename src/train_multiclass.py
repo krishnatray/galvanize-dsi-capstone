@@ -221,7 +221,7 @@ fi = pd.DataFrame(sorted(zip(map(lambda x: round(x, 4),
 fi.to_csv(f"{data_dir}/top_features_multiclass.csv")
 
 # plot chart top 10 features
-top_n = 15
+top_n = 5
 print(f"Top {top_n} features")
 print(fi.head(top_n))
 

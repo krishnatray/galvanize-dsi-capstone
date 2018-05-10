@@ -238,6 +238,12 @@ if __name__ == '__main__':
     X_train = cv.fit_transform(X_train_raw).toarray()
     X_test = cv.transform(X_test_raw).toarray()
 
+    ## Save cv to disk
+    model_dir ="./model"
+    data_dir ="./data"
+    file_name = f"{model_dir}/tfidf_multiclass.pkl"
+    print(f"Saving tfidf count vector to {file_name}")
+    joblib.dump(cv, file_name)
 
     #models = [RF(n_jobs=-1), LR(n_jobs=-1), GBC(), SVC(probability=True)]
     models = [MultinomialNB(), GaussianNB(), RF(n_jobs=-1), GBC(), XGB(n_jobs=-1)]
@@ -312,7 +318,7 @@ if __name__ == '__main__':
 
 
     # plot chart top n features
-    top_n = 15
+    top_n = 5
 
     print(f"Top {top_n} features")
     print(fi.head(top_n))
